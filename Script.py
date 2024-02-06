@@ -6,7 +6,8 @@ Created on Tue Feb  6 00:41:59 2024
 """
 
 import requests
-from decimal import Decimal, ROUND_DOWN ## to remove rounding errors
+import configparser
+import psycopg2
 from bs4 import BeautifulSoup
 
 # Replace with the actual URL of the page containing the usage statistics
@@ -44,7 +45,7 @@ if response.status_code ==  200:
         if len(columns) >=  4:
             # Extract the Pokémon name, Usage %, and Raw
             pokemon_name = columns[1]
-            usage_percentage = float(columns[2].rstrip('%')) /  100  # Convert percentage to decimal
+            usage_percentage = float(columns[2].rstrip('%')) #/  100  # Convert percentage to decimal
             raw = int(columns[3])
             # Append the data to the list
             pokemon_data.append((pokemon_name, usage_percentage, raw))
@@ -55,3 +56,65 @@ else:
 
 # Now you have a list of tuples with the Pokémon name, Usage %, and Raw
 print(pokemon_data)
+
+
+
+
+# Create a ConfigParser object
+config = configparser.ConfigParser()
+
+# Read the .ini file
+config.read('database.ini')
+
+# Access the database section
+db_config = config['postgres']
+
+
+# Now you can access individual items like this:
+host = db_config['host']
+dbname = db_config['dbname']
+user = db_config['user']
+password = db_config['password']
+port = db_config['port']
+endpoint = db_config['endpoint']
+
+# Combine the password with the endpoint for the initial connection
+initial_password = f"{endpoint}${password}"
+
+# Establish the connection with SSL enforced
+conn = psycopg2.connect(
+    host=host,
+    database=dbname,
+    user=user,
+    password=initial_password,
+    port=port,
+    sslmode='require'
+)
+
+cur = conn.cursor()
+
+# Create the table if it doesn't exist
+create_table_query = '''
+CREATE TABLE IF NOT EXISTS PokemonData (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(75) NOT NULL,
+    usage_percentage DECIMAL(10,   9) NOT NULL,
+    raw_count INTEGER NOT NULL
+);
+'''
+cur.execute(create_table_query)
+conn.commit()
+
+
+
+# Insert the scraped data into the table
+for row in pokemon_data:
+    insert_query = '''
+    INSERT INTO PokemonData (name, usage_percentage, raw_count) VALUES (%s, %s, %s);
+    '''
+    cur.execute(insert_query, (row[0], row[1], row[2]))
+conn.commit()
+
+# Close the cursor and the connection
+cur.close()
+conn.close()
