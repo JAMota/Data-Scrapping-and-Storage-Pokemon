@@ -93,12 +93,13 @@ conn = psycopg2.connect(
 
 cur = conn.cursor()
 
+
 # Create the table if it doesn't exist
 create_table_query = '''
 CREATE TABLE IF NOT EXISTS PokemonData (
     id SERIAL PRIMARY KEY,
     name VARCHAR(75) NOT NULL,
-    usage_percentage DECIMAL(10,   9) NOT NULL,
+    usage_percentage DECIMAL(11,   9) NOT NULL,
     raw_count INTEGER NOT NULL
 );
 '''
@@ -118,3 +119,5 @@ conn.commit()
 # Close the cursor and the connection
 cur.close()
 conn.close()
+
+print("end")
