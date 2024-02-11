@@ -99,7 +99,7 @@ create_table_query = '''
 CREATE TABLE IF NOT EXISTS PokemonData (
     id SERIAL PRIMARY KEY,
     name VARCHAR(75) NOT NULL,
-    usage_percentage DECIMAL(11,   9) NOT NULL,
+    usage_percentage DECIMAL(9,   6) NOT NULL,
     raw_count INTEGER NOT NULL
 );
 '''
